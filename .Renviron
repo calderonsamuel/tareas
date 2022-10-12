@@ -1,0 +1,5 @@
+DB_SECRET="apegoindividualpelotacielo"
+DB_USER="samuel"
+DB_NAME="reporte_mininter"
+DB_HOST="apps.samuelenrique.com"
+DB_PORT="3306"

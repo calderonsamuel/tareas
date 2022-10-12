@@ -1,0 +1,134 @@
+---
+title: "Analítica del reporte de tareas"
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r}
+# cache: true
+library(RMariaDB)
+library(tidyverse)
+
+con <- dbConnect(
+  MariaDB(),
+  host = Sys.getenv("DB_HOST"),
+  dbname = Sys.getenv("DB_NAME"),
+  user = Sys.getenv("DB_USER"),
+  password = Sys.getenv("DB_SECRET")
+)
+
+theme_set(theme_light())
+```
+
+```{r}
+tablas <- dbListTables(con)
+```
+
+```{r}
+progress <- dbReadTable(con, "progress")
+tasks <- dbReadTable(con, "tasks")
+users <- dbReadTable(con, "users")
+```
+
+```{r}
+progress_levels <- c("Pendiente", "En proceso", "Pausado", 
+                     "En revisión", "Terminado")
+```
+
+## Usuarios de la app
+
+Se puede ver que los usuarios se añadieron en el mes de junio. Corresponde con la fecha en que se empezó a usar la app.
+
+```{r}
+users |> 
+  mutate(
+    date_added = as.Date(date_added)
+  ) |> 
+  count(date_added) |> 
+  mutate(
+    n_users = cumsum(n)
+  ) |> 
+  ggplot(aes(date_added, n_users)) +
+  geom_line() +
+  geom_point()
+```
+
+## Tareas agregadas por fecha
+
+```{r}
+tasks_by_time <- progress |> 
+  group_by(task_id) |> 
+  arrange(time) |> 
+  slice(1) |> 
+  ungroup() |> 
+  mutate(time = as.Date(time)) |> 
+  semi_join(tasks, by = "task_id") |> 
+  count(time) |> 
+  mutate(n_tasks = cumsum(n)) 
+```
+
+Se puede ver que hay un uso intermitente de la función de agregar tareas. Este comportamiento es normal, ya que no todos los días se recibe una tarea nueva. Las caídas abruptas significan que los usuarios añadieron muchas tareas en un mismo día y pocas en los siguientes.
+
+```{r}
+tasks_by_time |> 
+  ggplot(aes(time, n)) +
+  geom_line() +
+  geom_point()
+```
+
+Viendo el agregado de tareas, se puede ver que el crecimiento es prácticamente lineal. Este gráfico cuenta muestra la misma información que el anterior, pero facilita la observación de "mesetas". Estas mesetas corresponden con fechas en las que no se están agregando tareas nuevas. Conocer la manera en que los equipos gestionan su programación de tareas permitiría saber valores atípicos.
+
+```{r}
+tasks_by_time |> 
+  ggplot(aes(time, n_tasks)) +
+  geom_line() +
+  geom_point()
+```
+
+## Estado de las tareas agregadas
+
+La mayor parte de las tareas que se han agregado a la app ya han sido reportadas como terminadas.
+
+```{r}
+progress |> 
+  semi_join(tasks, by = "task_id") |> 
+  group_by(task_id) |> 
+  slice_tail(n = 1) |> 
+  ungroup() |> 
+  mutate(status = factor(status, progress_levels) |> fct_rev()) |> 
+  count(status) |> 
+  ggplot(aes(n, status)) +
+  geom_col() +
+  geom_label(aes(label = n))
+```
+
+## Tiempo destinado a completar tareas
+
+```{r}
+progress |> 
+  semi_join(tasks, by = "task_id") |> 
+  group_by(task_id) |> 
+  filter(row_number() == 1 | row_number() == n()) |> 
+  filter(any(status == "Terminado")) |> 
+  mutate(time = as.Date(time)) |> 
+  select(task_id, status, time) |> 
+  arrange(task_id, status) |> 
+  pivot_wider(names_from = status, values_from = time) |> 
+  mutate(tiempo = Terminado - Pendiente) |> 
+  ungroup() |> 
+  ggplot(aes(tiempo)) +
+  geom_histogram()
+```
+
+```{r}
+progress |> 
+  as_tibble()
+```
+
+```{r}
+tasks |> 
+  as_tibble() |> 
+  count(user_id, sort = TRUE)
+```

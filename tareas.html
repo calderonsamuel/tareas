@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.0.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Analítica del reporte de tareas</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+<script src="tareas_files/libs/clipboard/clipboard.min.js"></script>
+<script src="tareas_files/libs/quarto-html/quarto.js"></script>
+<script src="tareas_files/libs/quarto-html/popper.min.js"></script>
+<script src="tareas_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="tareas_files/libs/quarto-html/anchor.min.js"></script>
+<link href="tareas_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="tareas_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="tareas_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="tareas_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="tareas_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Analítica del reporte de tareas</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
+<section id="usuarios-de-la-app" class="level2">
+<h2 class="anchored" data-anchor-id="usuarios-de-la-app">Usuarios de la app</h2>
+<p>Se puede ver que los usuarios se añadieron en el mes de junio. Corresponde con la fecha en que se empezó a usar la app.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="tareas_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="tareas-agregadas-por-fecha" class="level2">
+<h2 class="anchored" data-anchor-id="tareas-agregadas-por-fecha">Tareas agregadas por fecha</h2>
+<div class="cell">
+
+</div>
+<p>Se puede ver que hay un uso intermitente de la función de agregar tareas. Este comportamiento es normal, ya que no todos los días se recibe una tarea nueva. Las caídas abruptas significan que los usuarios añadieron muchas tareas en un mismo día y pocas en los siguientes.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="tareas_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Viendo el agregado de tareas, se puede ver que el crecimiento es prácticamente lineal. Este gráfico cuenta muestra la misma información que el anterior, pero facilita la observación de “mesetas”. Estas mesetas corresponden con fechas en las que no se están agregando tareas nuevas. Conocer la manera en que los equipos gestionan su programación de tareas permitiría saber valores atípicos.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="tareas_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="estado-de-las-tareas-agregadas" class="level2">
+<h2 class="anchored" data-anchor-id="estado-de-las-tareas-agregadas">Estado de las tareas agregadas</h2>
+<p>La mayor parte de las tareas que se han agregado a la app ya han sido reportadas como terminadas.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="tareas_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="tiempo-destinado-a-completar-tareas" class="level2">
+<h2 class="anchored" data-anchor-id="tiempo-destinado-a-completar-tareas">Tiempo destinado a completar tareas</h2>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 94 × 7
+   task_id           status_id   step_id reported_by        status time  explain
+   &lt;chr&gt;             &lt;chr&gt;       &lt;chr&gt;   &lt;chr&gt;              &lt;chr&gt;  &lt;chr&gt; &lt;chr&gt;  
+ 1 buvij-gisam-nudip nohiz-mivob step_01 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 2 fazup-rovod-vipun fodaj-sitob step_01 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 3 vutat-zuzoj-kopip kujop-kimal step_01 dgco84@mininter.g… Pendi… 2022… Asigna…
+ 4 mumaj-mahor-rujog noror-zubor step_01 dgco84@mininter.g… Pendi… 2022… Asigna…
+ 5 gahuf-laral-sajid paraj-jabor step_01 dgco84@mininter.g… Pendi… 2022… Asigna…
+ 6 dogor-rahoh-tuhoj hufos-susil step_01 dgco84@mininter.g… Pendi… 2022… Asigna…
+ 7 fozal-ginug-kavov ravij-mapoj step_01 dgco84@mininter.g… Pendi… 2022… Asigna…
+ 8 kutup-zunak-duvij zozun-nojun step_01 dgco84@mininter.g… Pendi… 2022… Asigna…
+ 9 magut-giziz-kizin rodij-famaj step_01 dgco84@mininter.g… Pendi… 2022… Asigna…
+10 lokiv-monaj-bizos gokaf-tojur step_01 dgco93@mininter.g… Pendi… 2022… Asigna…
+# … with 84 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 917 × 7
+   task_id           status_id   step_id reported_by        status time  explain
+   &lt;chr&gt;             &lt;chr&gt;       &lt;chr&gt;   &lt;chr&gt;              &lt;chr&gt;  &lt;chr&gt; &lt;chr&gt;  
+ 1 tadas-farav-tomih vurak-danud step_01 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 2 tadas-farav-tomih vurak-danud step_02 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 3 tadas-farav-tomih vurak-danud step_03 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 4 tadas-farav-tomih vurak-danud step_04 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 5 tadas-farav-tomih vurak-danud step_05 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 6 tadas-farav-tomih vurak-danud step_11 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 7 tadas-farav-tomih vurak-danud step_12 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 8 tadas-farav-tomih vurak-danud step_13 dgco93@mininter.g… Pendi… 2022… Asigna…
+ 9 tadas-farav-tomih vurak-danud step_22 dgco93@mininter.g… Pendi… 2022… Asigna…
+10 tadas-farav-tomih vurak-danud step_23 dgco93@mininter.g… Pendi… 2022… Asigna…
+# … with 907 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 2
+  user_id                    n
+  &lt;chr&gt;                  &lt;int&gt;
+1 dgco84@mininter.gob.pe    23
+2 dgco93@mininter.gob.pe    17
+3 dgco80@mininter.gob.pe    15
+4 dgco26@mininter.gob.pe     3
+5 team-politicas             2</code></pre>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
