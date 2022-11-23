@@ -100,8 +100,13 @@ tasks_addition |>
   ggplot(aes(date, n)) +
   geom_line() +
   scale_y_continuous(minor_breaks = \(num) seq_len(max(num))) +
+  scale_x_date(date_breaks = "1 day", date_labels = "%a %d/%m") +
   labs(
     x = "Fecha",
     y = "N° de tareas"
+  ) +
+  theme(
+    axis.ticks.x = element_line(),
+    axis.text.x = element_text(angle = 45, hjust = 1)
   )
 ```
