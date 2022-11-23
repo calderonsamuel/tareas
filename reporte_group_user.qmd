@@ -1,0 +1,107 @@
+---
+title: "Reporte de tareas"
+format: docx
+editor: visual
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r}
+date_min <- Sys.Date() - 15
+date_max <- Sys.Date()
+email <- Sys.getenv("REPORTES_EMAIL")
+```
+
+```{r}
+library(tidyverse)
+library(reportesAPI)
+library(glue)
+
+db <- DBManager$new()
+theme_custom <- theme_minimal() +
+  theme(
+    panel.grid.major.y = element_line(linewidth = 1),
+    panel.grid.minor.y = element_line(linetype = 2),
+    panel.grid.major.x = element_blank()
+  )
+  
+theme_set(theme_custom)
+```
+
+```{r}
+user <- db$db_get_query("SELECT * FROM users WHERE email = {email}")
+```
+
+## Datos de usuario
+
+**Nombres**: `r user$name`
+
+**Apellidos**: `r user$last_name`
+
+**Periodo del reporte**: Desde `r format(date_min, "%d/%m/%Y")` hasta `r format(date_max, "%d/%m/%Y")`
+
+\pagebreak
+
+## Tareas
+
+### Estado de las tareas con última modificación en el periodo
+
+```{r}
+progress_levels <- c("Pendiente", "En proceso", "Pausado", 
+                     "En revisión", "Observado", "Terminado")
+```
+
+```{r}
+tasks_last_modified <- db$db_get_query(
+  "SELECT * FROM tasks 
+  WHERE 
+    assignee = {user$user_id} AND
+    time_last_modified >= {date_min} AND
+    time_last_modified <= {date_max + 1}
+  "
+)
+```
+
+```{r}
+#| fig-align: center
+#| fig-width: 8
+tasks_last_modified |> 
+  mutate(status_current = factor(status_current, levels = progress_levels)) |> 
+  count(status_current) |> 
+  ggplot(aes(status_current, n)) +
+  geom_col() +
+  scale_y_continuous(minor_breaks = \(num) seq_len(max(num))) +
+  labs(
+    x = "Estado",
+    y = "N° de tareas"
+  ) 
+```
+
+### Tareas agregadas por fecha
+
+```{r}
+tasks_addition <- db$db_get_query(
+  "SELECT * FROM tasks
+  WHERE 
+    assignee = {user$user_id} AND
+    time_creation >= {date_min} AND
+    time_creation <= {date_max + 1}"
+)
+```
+
+```{r}
+tasks_addition |> 
+  mutate(date = as.Date(time_creation)) |> 
+  count(date) |> 
+  complete(date = seq(date_min, date_max, by = 1)) |> 
+  replace_na(list(n = 0)) |> 
+  ggplot(aes(date, n)) +
+  geom_line() +
+  scale_y_continuous(minor_breaks = \(num) seq_len(max(num))) +
+  labs(
+    x = "Fecha",
+    y = "N° de tareas"
+  )
+```
