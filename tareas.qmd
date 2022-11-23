@@ -1,5 +1,6 @@
 ---
 title: "Analítica del reporte de tareas"
+format: docx
 execute: 
   echo: false
   message: false
@@ -8,49 +9,45 @@ execute:
 
 ```{r}
 # cache: true
-library(RMariaDB)
+library(reportesAPI)
 library(tidyverse)
+library(lubridate)
 
-con <- dbConnect(
-  MariaDB(),
-  host = Sys.getenv("DB_HOST"),
-  dbname = Sys.getenv("DB_NAME"),
-  user = Sys.getenv("DB_USER"),
-  password = Sys.getenv("DB_SECRET")
-)
-
+db <- DBManager$new()
 theme_set(theme_light())
 ```
 
 ```{r}
-tablas <- dbListTables(con)
+progress <- db$db_get_query("select * from progress")
+tasks <- db$db_get_query("select * from tasks")
+users <- db$db_get_query("select * from users")
+groups <- db$db_get_query("select * from groups")
 ```
 
 ```{r}
-progress <- dbReadTable(con, "progress")
-tasks <- dbReadTable(con, "tasks")
-users <- dbReadTable(con, "users")
-```
-
-```{r}
-progress_levels <- c("Pendiente", "En proceso", "Pausado", 
-                     "En revisión", "Terminado")
+app_versiones <-
+  tribble(
+    ~version, ~fecha,
+    "0.1.0", "2022-07-18",
+    "0.2.1", "2022-09-09",
+    "0.2.2", "2022-09-16",
+    "0.2.3", "2022-09-28",
+    "0.2.4", "2022-10-19",
+    "0.2.5", "2022-10-21",
+    "0.3.0", "2022-11-11"
+  ) |> 
+  mutate(fecha = as.Date(fecha))
 ```
 
 ## Usuarios de la app
 
-Se puede ver que los usuarios se añadieron en el mes de junio. Corresponde con la fecha en que se empezó a usar la app.
+Se puede ver que los usuarios se añadieron en el mes de junio. Corresponde con la fecha en que se empezó a usar la app. Con la implementación de la versión 0.3.0 de la app y la incorporación de un nuevo miembro en el equipo de Especialistas en Políticas el número se incrementó en noviembre.
 
 ```{r}
 users |> 
-  mutate(
-    date_added = as.Date(date_added)
-  ) |> 
-  count(date_added) |> 
-  mutate(
-    n_users = cumsum(n)
-  ) |> 
-  ggplot(aes(date_added, n_users)) +
+  count(time_creation) |> 
+  mutate(n_users = cumsum(n)) |> 
+  ggplot(aes(time_creation, n_users)) +
   geom_line() +
   geom_point()
 ```
@@ -60,20 +57,25 @@ users |>
 ```{r}
 tasks_by_time <- progress |> 
   group_by(task_id) |> 
-  arrange(time) |> 
-  slice(1) |> 
+  slice_head(n = 1) |> 
   ungroup() |> 
-  mutate(time = as.Date(time)) |> 
-  semi_join(tasks, by = "task_id") |> 
-  count(time) |> 
-  mutate(n_tasks = cumsum(n)) 
+  mutate(day_reported = as.Date(time_reported)) |> 
+  count(day_reported, name = "n_tasks_day") |> 
+  mutate(n_tasks_acum = cumsum(n_tasks_day)) 
+```
+
+```{r}
+tasks_by_time |> 
+  ggplot(aes(day_reported, n_tasks_day)) +
+  geom_point() +
+  geom_line()
 ```
 
 Se puede ver que hay un uso intermitente de la función de agregar tareas. Este comportamiento es normal, ya que no todos los días se recibe una tarea nueva. Las caídas abruptas significan que los usuarios añadieron muchas tareas en un mismo día y pocas en los siguientes.
 
 ```{r}
 tasks_by_time |> 
-  ggplot(aes(time, n)) +
+  ggplot(aes(day_reported, n_tasks_acum)) +
   geom_line() +
   geom_point()
 ```
@@ -82,53 +84,101 @@ Viendo el agregado de tareas, se puede ver que el crecimiento es prácticamente 
 
 ```{r}
 tasks_by_time |> 
-  ggplot(aes(time, n_tasks)) +
+  ggplot(aes(day_reported, n_tasks_day)) +
   geom_line() +
   geom_point()
 ```
 
 ## Estado de las tareas agregadas
 
-La mayor parte de las tareas que se han agregado a la app ya han sido reportadas como terminadas.
+La mayor parte de las tareas que se han agregado a la app ya han sido reportadas como terminadas. El siguiente gráfico muestra el estado de las tareas en ejecución.
 
 ```{r}
-progress |> 
+progress_levels <- c("Pendiente", "En proceso", "Pausado",
+                    "En revisión", "Observado", "Terminado", "Eliminado")
+```
+
+```{r}
+task_statuses <- progress |> 
   semi_join(tasks, by = "task_id") |> 
   group_by(task_id) |> 
   slice_tail(n = 1) |> 
   ungroup() |> 
-  mutate(status = factor(status, progress_levels) |> fct_rev()) |> 
-  count(status) |> 
-  ggplot(aes(n, status)) +
-  geom_col() +
-  geom_label(aes(label = n))
+  filter(status %in% progress_levels) |> 
+  mutate(status_fct = factor(status, progress_levels) |> fct_rev()) |> 
+  count(status_fct) 
+```
+
+```{r}
+task_statuses |> 
+  ggplot(aes(n, status_fct)) +
+  geom_col(aes(fill = status_fct)) +
+  geom_label(aes(label = n)) +
+  theme(
+    # legend.position = "top", 
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank() 
+  ) +
+  labs(fill = "Estado")
+```
+
+```{r}
+ progress_clean <- progress |> 
+   semi_join(tasks, by = c("task_id")) |> 
+   filter(status %in% progress_levels) |> 
+   mutate(
+     status_fct = factor(status, progress_levels) |> fct_rev()
+   )
+   
+```
+
+```{r}
+get_task_status_per_day <- function(day) {
+  progress_clean |>
+  filter(
+    time_reported <= (day)
+  ) |>
+  group_by(task_id) |>
+  slice_tail(n = 1) |>
+  ungroup() |>
+  count(status_fct, .drop = FALSE)
+}
+```
+
+```{r}
+tasks_status_per_day <- tibble(
+    days = seq.Date(ymd("2022-07-17"), ymd("2022-11-17"), by = "1 day")
+  ) |> 
+  mutate(data = map(days, get_task_status_per_day)) |> 
+  unnest(data)
+```
+
+En el siguiente gráfico se muestra la evolución del estado de cumplimiento de las tareas asignadas. Para una mejor visualización se omiten las tareas concluidas. Además, se incluye líneas verticales correspondientes a la fecha de lanzamiento de nuevas versiones del aplicativo.
+
+Se puede ver por ejemplo hasta el 9 de setiembre no era posible dar por terminadas actividades que se encontraban "En revisión", por lo que había una acumulación de tareas en este estado. Durante el mes de octubre y noviembre se puede ver que existen varias tareas en estado "Pausado".
+
+```{r}
+tasks_status_per_day |> 
+  filter(!status_fct %in% c("Observado", "Eliminado", "Terminado")) |> 
+  ggplot(aes(days, n, fill = status_fct)) +
+  geom_area(position = "stack") +
+  geom_vline(aes(xintercept = fecha), data = app_versiones)
 ```
 
 ## Tiempo destinado a completar tareas
 
 ```{r}
-progress |> 
-  semi_join(tasks, by = "task_id") |> 
-  group_by(task_id) |> 
-  filter(row_number() == 1 | row_number() == n()) |> 
-  filter(any(status == "Terminado")) |> 
-  mutate(time = as.Date(time)) |> 
-  select(task_id, status, time) |> 
-  arrange(task_id, status) |> 
-  pivot_wider(names_from = status, values_from = time) |> 
-  mutate(tiempo = Terminado - Pendiente) |> 
-  ungroup() |> 
-  ggplot(aes(tiempo)) +
-  geom_histogram()
-```
-
-```{r}
-progress |> 
-  as_tibble()
-```
-
-```{r}
-tasks |> 
-  as_tibble() |> 
-  count(user_id, sort = TRUE)
+# progress |> 
+#   semi_join(tasks, by = "task_id") |> 
+#   group_by(task_id) |> 
+#   filter(row_number() == 1 | row_number() == n()) |> 
+#   filter(any(status == "Terminado")) |> 
+#   mutate(time = as.Date(time)) |> 
+#   select(task_id, status, time) |> 
+#   arrange(task_id, status) |> 
+#   pivot_wider(names_from = status, values_from = time) |> 
+#   mutate(tiempo = Terminado - Pendiente) |> 
+#   ungroup() |> 
+#   ggplot(aes(tiempo)) +
+#   geom_histogram()
 ```
