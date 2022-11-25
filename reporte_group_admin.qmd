@@ -1,0 +1,48 @@
+---
+title: "Reporte de grupo"
+format: markdown
+editor: visual
+execute: 
+  warning: false
+  message: false
+  echo: false
+---
+
+```{r}
+group_id <- Sys.getenv("TAREAS_GROUP_ID")
+```
+
+Probando...
+
+```{r}
+db <- reportesAPI::DBManager$new()
+source("R/render_reporte_group_user.R")
+```
+
+```{r}
+group_users <- db$db_get_query("select * from group_users where group_id = {group_id}")
+```
+
+```{r}
+#| results: asis
+render_params <- group_users |> 
+  subset(select = c(group_id, user_id)) |> 
+  transform(
+    date_max = as.character(Sys.Date()),
+    output_file = paste0(user_id, ".md"),
+    output_format = "markdown"
+  )
+```
+
+
+```{r}
+purrr::pwalk(render_params, render_reporte_group_user)
+```
+
+
+```{r}
+#| results: asis
+paste0("{{< include ", render_params$output_file, " >}}\n\n") |> 
+  purrr::walk(cat)
+```
+

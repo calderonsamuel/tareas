@@ -1,17 +1,24 @@
 ---
 title: "Reporte de tareas"
-format: docx
+format: 
+  docx:
+    reference-doc: "reporte_group_user_template.docx"
 editor: visual
 execute: 
   echo: false
   message: false
   warning: false
+params:
+  date_max: "2022-11-25"
+  group_id: "TAREAS_GROUP_ID"
+  user_id: "TAREAS_USER_ID"
 ---
 
 ```{r}
-date_min <- Sys.Date() - 15
-date_max <- Sys.Date()
-email <- Sys.getenv("REPORTES_EMAIL")
+date_max <- as.Date(params$date_max)
+date_min <- date_max - 15
+group_id <- if (params$group_id == "TAREAS_GROUP_ID") Sys.getenv("TAREAS_GROUP_ID") else params$group_id
+user_id <- if (params$user_id == "TAREAS_USER_ID") Sys.getenv("TAREAS_USER_ID") else params$user_id
 ```
 
 ```{r}
@@ -20,6 +27,7 @@ library(reportesAPI)
 library(glue)
 
 db <- DBManager$new()
+
 theme_custom <- theme_minimal() +
   theme(
     panel.grid.major.y = element_line(linewidth = 1),
@@ -31,22 +39,33 @@ theme_set(theme_custom)
 ```
 
 ```{r}
-user <- db$db_get_query("SELECT * FROM users WHERE email = {email}")
+user <- db$db_get_query("SELECT * FROM users WHERE user_id = {user_id}")
+```
+
+```{r}
+get_tasks_period <- function(group_id, user_id, date_min, date_max) {
+  db$db_get_query(
+  "SELECT * FROM tasks 
+  WHERE 
+    group_id = {group_id} AND
+    assignee = {user_id} AND
+    time_last_modified >= {date_min} AND
+    time_last_modified <= {date_max + 1}
+  ", 
+  group_id = group_id,
+  user_id = user_id)
+}
 ```
 
 ## Datos de usuario
 
-**Nombres**: `r user$name`
-
-**Apellidos**: `r user$last_name`
-
-**Periodo del reporte**: Desde `r format(date_min, "%d/%m/%Y")` hasta `r format(date_max, "%d/%m/%Y")`
-
-\pagebreak
+|                          |                                                                               |
+|-------------------|-----------------------------------------------------|
+| **Nombres**:             | `r user$name`                                                                 |
+| **Apellidos**:           | `r user$last_name`                                                            |
+| **Periodo del reporte**: | Desde `r format(date_min, "%d/%m/%Y")` hasta `r format(date_max, "%d/%m/%Y")` |
 
 ## Tareas
-
-### Estado de las tareas con última modificación en el periodo
 
 ```{r}
 progress_levels <- c("Pendiente", "En proceso", "Pausado", 
@@ -54,20 +73,50 @@ progress_levels <- c("Pendiente", "En proceso", "Pausado",
 ```
 
 ```{r}
-tasks_last_modified <- db$db_get_query(
-  "SELECT * FROM tasks 
-  WHERE 
-    assignee = {user$user_id} AND
-    time_last_modified >= {date_min} AND
-    time_last_modified <= {date_max + 1}
-  "
-)
+tasks_period <- get_tasks_period(group_id, user_id, date_min, date_max)
 ```
+
+### Productos de tareas terminadas en el periodo
+
+```{r}
+tasks_period |> 
+  filter(status_current == "Terminado") |> 
+  count(output_unit, wt = output_current) |> 
+  rename(
+    `Unidad de medida` = output_unit,
+    Cantidad = n
+  ) |> 
+  flextable::flextable() |> 
+  flextable::set_table_properties("autofit") |> 
+  flextable::font(part = "all", fontname = "Calibri") |> 
+  flextable::fontsize(size = 10, part = "all")
+```
+
+### Productos de tareas no terminadas en el periodo
+
+```{r}
+tasks_period |> 
+  filter(status_current != "Terminado") |> 
+  count(output_unit, wt = output_current) |> 
+  rename(
+    `Unidad de medida` = output_unit,
+    Cantidad = n
+  ) |> 
+  flextable::flextable() |> 
+  flextable::set_table_properties("autofit") |> 
+  flextable::font(part = "all", fontname = "Calibri") |> 
+  flextable::fontsize(size = 10, part = "all")
+```
+
+\pagebreak
+
+### Estado de las tareas con última modificación en el periodo
 
 ```{r}
 #| fig-align: center
 #| fig-width: 8
-tasks_last_modified |> 
+#| fig-dpi: 300
+tasks_period |> 
   mutate(status_current = factor(status_current, levels = progress_levels)) |> 
   count(status_current) |> 
   ggplot(aes(status_current, n)) +
@@ -82,17 +131,10 @@ tasks_last_modified |>
 ### Tareas agregadas por fecha
 
 ```{r}
-tasks_addition <- db$db_get_query(
-  "SELECT * FROM tasks
-  WHERE 
-    assignee = {user$user_id} AND
-    time_creation >= {date_min} AND
-    time_creation <= {date_max + 1}"
-)
-```
-
-```{r}
-tasks_addition |> 
+#| fig-align: center
+#| fig-width: 8
+#| fig-dpi: 300
+tasks_period |> 
   mutate(date = as.Date(time_creation)) |> 
   count(date) |> 
   complete(date = seq(date_min, date_max, by = 1)) |> 
@@ -109,4 +151,8 @@ tasks_addition |>
     axis.ticks.x = element_line(),
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
+```
+
+```{r}
+rm(db)
 ```
