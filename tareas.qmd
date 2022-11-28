@@ -1,6 +1,10 @@
 ---
 title: "Analítica del reporte de tareas"
-format: docx
+format: 
+  docx:
+    fig-width: 8
+    fig-dpi: 300
+    fig-align: center
 execute: 
   echo: false
   message: false
@@ -82,13 +86,6 @@ tasks_by_time |>
 
 Viendo el agregado de tareas, se puede ver que el crecimiento es prácticamente lineal. Este gráfico cuenta muestra la misma información que el anterior, pero facilita la observación de "mesetas". Estas mesetas corresponden con fechas en las que no se están agregando tareas nuevas. Conocer la manera en que los equipos gestionan su programación de tareas permitiría saber valores atípicos.
 
-```{r}
-tasks_by_time |> 
-  ggplot(aes(day_reported, n_tasks_day)) +
-  geom_line() +
-  geom_point()
-```
-
 ## Estado de las tareas agregadas
 
 La mayor parte de las tareas que se han agregado a la app ya han sido reportadas como terminadas. El siguiente gráfico muestra el estado de las tareas en ejecución.
@@ -147,7 +144,7 @@ get_task_status_per_day <- function(day) {
 
 ```{r}
 tasks_status_per_day <- tibble(
-    days = seq.Date(ymd("2022-07-17"), ymd("2022-11-17"), by = "1 day")
+    days = seq.Date(ymd("2022-07-17"), Sys.Date(), by = "1 day")
   ) |> 
   mutate(data = map(days, get_task_status_per_day)) |> 
   unnest(data)
@@ -166,6 +163,8 @@ tasks_status_per_day |>
 ```
 
 ## Tiempo destinado a completar tareas
+
+En proceso...
 
 ```{r}
 # progress |> 
